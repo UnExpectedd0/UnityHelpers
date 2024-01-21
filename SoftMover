@@ -1,0 +1,109 @@
+using System;
+using UnityEngine;
+
+
+public class SoftMover: MonoBehaviour
+{
+    public float Speed { get; set; }
+    public Action OnStaticMoveDone;
+
+    private Transform Src { get; set;  }
+    private Transform DstDynamic { get; set; }
+    private Vector3 DstStatic { get; set; }
+    private MoveMode Mode { get; set; }
+
+
+    private Vector3 movement;
+    private bool tickingDynamic;
+    private bool tickingStatic;
+    private bool movingPassable;
+
+    public SoftMover(Transform src, Transform dst, MoveMode mode = MoveMode.StaticMove, float speed = 6f)
+    {
+        this.Src = src;
+        this.DstDynamic = dst;
+        this.DstStatic = dst.position;
+        this.Mode = mode;
+        this.Speed = speed;
+    }
+
+    public void Set(Transform dst, MoveMode mode, bool startTicking = true, bool movePassable = true, float speed = 6f)
+    {
+        this.DstDynamic = dst;
+        this.DstStatic = dst.position;
+        this.Mode = mode;
+        this.Speed = speed;
+        this.movingPassable = movePassable;
+
+        HandlePassable(true);
+
+        if (startTicking)
+        {
+            if (mode == MoveMode.StaticMove) this.tickingStatic = true;
+            if (mode == MoveMode.DynamicMove) this.tickingDynamic = true;
+        }
+
+    }
+
+    public void StopAll()
+    {
+        HandlePassable(false);
+        this.tickingDynamic = false;
+        this.tickingStatic = false;
+    }
+
+    /// <summary>
+    /// Put the function in an Update method from <see cref="MonoBehaviour"/><br></br>
+    /// Ticks dynamic or static depending on <see cref="SoftMover.Mode"/> <br></br>
+    /// If <see cref="Mode"/> is 
+    /// <list type="bullet">
+    /// <item><see cref="MoveMode.DynamicMove"/>: Uses <see cref="SoftMover.Src"/> as the reference.</item>
+    /// <item><see cref="MoveMode.StaticMove"/>: Takes the last Vecto3 of <see cref="SoftMover.Src"/></item>
+    /// </list>
+    /// </summary>
+    /// <param name="space"></param>
+    /// <param name="minDist">Parameter to be used to detect the end point when ticking dynamic.</param>
+    public void Tick(Space space = Space.World, float minDist = 0.2f)
+    {
+        if (this.Mode == MoveMode.StaticMove) TickStatic(space, minDist);
+        if (this.Mode == MoveMode.DynamicMove) TickDynamic(space);
+    }
+    
+    private void TickDynamic(Space space = Space.World)
+    {
+        if (!this.tickingDynamic) return;
+        movement = DstDynamic.position - Src.position;
+        Vector3.ClampMagnitude(movement, 1);
+        Src.transform.Translate(Speed * Time.deltaTime * movement, space);
+    }
+    private void TickStatic(Space space = Space.World, float minDist = 0.2f)
+    {
+        if (!this.tickingStatic) return;
+        
+        movement = DstStatic - Src.position;
+        Vector3.ClampMagnitude(movement, 1);
+        if (movement.magnitude > minDist)
+        {
+            Src.transform.Translate(Speed * Time.deltaTime * movement, space);
+        }
+        else
+        {
+            Debug.Log("Stopped");
+            this.tickingStatic = false;
+            HandlePassable(false);
+            OnStaticMoveDone.Invoke();
+        }
+    }
+
+
+    private void HandlePassable(bool isTrigger)
+    {
+        if (this.movingPassable) Src.GetComponent<Collider>().isTrigger = isTrigger;
+    }
+}
+
+public enum MoveMode : int
+{
+    DynamicMove = 0,
+    StaticMove = 1,
+}
