@@ -88,7 +88,6 @@ public class SoftMover: MonoBehaviour
         }
         else
         {
-            Debug.Log("Stopped");
             this.tickingStatic = false;
             HandlePassable(false);
             OnStaticMoveDone.Invoke();
