@@ -73,7 +73,7 @@ public class SoftMover: MonoBehaviour
     {
         if (!this.tickingDynamic) return;
         movement = DstDynamic.position - Src.position;
-        Vector3.ClampMagnitude(movement, 1);
+        // movement = Vector3.ClampMagnitude(movement, 1);
         Src.transform.Translate(Speed * Time.deltaTime * movement, space);
     }
     private void TickStatic(Space space = Space.World, float minDist = 0.2f)
@@ -81,7 +81,7 @@ public class SoftMover: MonoBehaviour
         if (!this.tickingStatic) return;
         
         movement = DstStatic - Src.position;
-        Vector3.ClampMagnitude(movement, 1);
+        // movement = Vector3.ClampMagnitude(movement, 1);
         if (movement.magnitude > minDist)
         {
             Src.transform.Translate(Speed * Time.deltaTime * movement, space);
